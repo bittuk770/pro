@@ -1,3 +1,38 @@
+--------------tables------------------
+create table tbl_Patient_1197810(patient_id int primary key identity(1,1), patient_name varchar(15), age int, gender varchar(10), patient_address varchar(50), patient_type varchar(5) check(patient_type in('in','out')), speciality_id int references tbl_speciality_1197810(speciality_id))
+
+create table tbl_speciality_1197810(speciality_id int primary key identity(1,1), speciality_name varchar(50))
+
+insert into tbl_speciality_1197810 values('ENT')
+insert into tbl_speciality_1197810 values('Cardialogy')
+insert into tbl_speciality_1197810 values('ENT')
+
+select * from tbl_speciality_1197810
+
+select * from tbl_Patient_1197810
+
+---------------add patient details-----------------------
+create procedure pro_addDetails_1197810(@patient_name varchar(15), @age int,@gender varchar(10), @patient_address varchar(50), @patient_type varchar(5), @speciality_id int )
+as
+begin
+insert into tbl_Patient_1197810 values(@patient_name, @age,@gender,@patient_address, @patient_type, @speciality_id)
+end
+
+-------------fill grid view-----------------
+create procedure pro_fillPatientDetails_1197810(@patient_type varchar(5))
+as
+begin
+select patient_id,patient_name,age,speciality_name,gender from tbl_Patient_1197810 join tbl_speciality_1197810 ON tbl_Patient_1197810.speciality_id=tbl_speciality_1197810.speciality_id where patient_type= @patient_type
+end
+
+-----------delete stored procedure--------------
+
+create procedure pro_deletePatientDetails_1197810(@patient_id int)
+as
+begin
+delete tbl_Patient_1197810 where patient_id=@patient_id
+end
+
 Dal:-
 _______
 using HospitalBO;
