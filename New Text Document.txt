@@ -86,7 +86,35 @@ namespace HospitalDAL
             {
                 return 0;
             }
+
+or  public int DeletePatient(Hospitalbo objbo)
+        {
+            SqlConnection con = new SqlConnection(ConfigurationManager.ConnectionStrings["con"].ConnectionString);
+            SqlCommand com = new SqlCommand("sp_delb2", con);
+            com.CommandType = CommandType.StoredProcedure;
+            con.Open();
+            com.Parameters.AddWithValue("@PattientID", objbo.PatientID);
+            int i = com.ExecuteNonQuery();
+            con.Close();
+            return i;
         }
+        }
+ public int UpdateDonor(IBloodBO objbo)
+        {
+            int result;
+            SqlConnection con = new SqlConnection(ConfigurationManager.ConnectionStrings["con"].ConnectionString);
+            SqlCommand cmd = new SqlCommand("proc_up", con);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@did", objbo.DonorID);
+            cmd.Parameters.AddWithValue("@dname", objbo.DonorName);
+            cmd.Parameters.AddWithValue("@dadd", objbo.DonorAddress);
+            cmd.Parameters.AddWithValue("@contact", objbo.Contact);
+            con.Open();
+            result = cmd.ExecuteNonQuery();
+            con.Close();
+            return result;
+        }
+
     }
 }
 ---------------------------------------
@@ -211,6 +239,77 @@ protected void Page_Load(object sender, EventArgs e)
         {
 
         }
+
+
+
+protected void GridView1_RowEditing(object sender, GridViewEditEventArgs e)
+        {
+            GridView1.EditIndex = e.NewEditIndex;
+            Data_Bind();
+        }
+
+        protected void GridView1_RowUpdating(object sender, GridViewUpdateEventArgs e)
+        {
+            GridViewRow row = GridView1.Rows[GridView1.EditIndex];
+            IBloodBO objbo = new BloodBO();
+            objbo.DonorID = Int32.Parse((row.FindControl("Label1") as Label).Text);
+            objbo.DonorName= (row.FindControl("TextBox1") as TextBox).Text;
+            objbo.DonorAddress = ((row.FindControl("TextBox2") as TextBox).Text);
+            objbo.Contact = Int32.Parse((row.FindControl("TextBox4") as TextBox).Text);
+            IBloodBLL objBLL = new BloodBLL();
+            objBLL.UpdateDonor(objbo);
+            Data_Bind();
+        }
+
+        protected void GridView1_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
+        {
+            GridView1.EditIndex = -1;
+            Data_Bind();
+        }
+
+
+
+alternative
+--------------
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            if (!IsPostBack)
+            {
+                 data_bind();
+            }
+        }
+
+           public void data_bind()
+        {
+            Hospitalbo objbo = new Hospitalbo();
+            Hospitalbll objbll = new Hospitalbll();
+            objbo.PatientType= Convert.ToString(Session["PatientType"]);
+            DataSet ds = new DataSet();
+            ds = objbll.ViewPatient(objbo);
+            GridView1.DataSource = ds;
+            GridView1.DataBind();
+        }
+
+        protected void GridView1_RowDeleting(object sender, GridViewDeleteEventArgs e)
+        {
+            Hospitalbll objbll = new Hospitalbll();
+            Hospitalbo objbo = new Hospitalbo();
+            int row = int.Parse(GridView1.DataKeys[e.RowIndex].Value.ToString());
+            objbo.PatientID = row;
+            int i = objbll.DeletePatient(objbo);
+            if(i>0)
+            {
+                Response.Write("Deleted");
+            }
+            else
+            {
+                Response.Write("Not deleted");
+            }
+            data_bind();
+        }
+     
+
 ui
 -------
 <asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
@@ -225,7 +324,9 @@ ui
     <asp:Label ID="lbl_total" runat="server"></asp:Label>
     </p>
 <p>
-    <asp:GridView ID="gv_patient" runat="server" AutoGenerateColumns="False" DataKeyNames="patient_id" OnRowDeleting="gv_patient_RowDeleting" OnSelectedIndexChanged="gv_patient_SelectedIndexChanged">
+    <asp:GridView ID="gv_patient" runat="server" AutoGenerateColumns="False" DataKeyNames="patient_id" 
+
+OnRowDeleting="gv_patient_RowDeleting" OnSelectedIndexChanged="gv_patient_SelectedIndexChanged">
         <Columns>
             <asp:TemplateField HeaderText="Patient ID">
                 <EditItemTemplate>
@@ -343,7 +444,9 @@ appSettings>
     <add key="ValidationSettings:UnobtrusiveValidationMode" value="None" />
   </appSettings>
   <connectionStrings>
-    <add name="MyCon" connectionString="data source=inchnilpdb02\mssqlserver1; initial catalog=CHN16_MMS98_TEST; user id=mms98user; password=mms98user;"  providerName="System.Data.SqlClient"/>
+    <add name="MyCon" connectionString="data source=inchnilpdb02\mssqlserver1; initial catalog=CHN16_MMS98_TEST; user 
+
+id=mms98user; password=mms98user;"  providerName="System.Data.SqlClient"/>
   </connectionStrings>
   <system.web>
     <authentication mode="Forms">
