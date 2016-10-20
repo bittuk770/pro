@@ -1,0 +1,380 @@
+Dal:-
+_______
+using HospitalBO;
+using System;
+using System.Collections.Generic;
+using System.Configuration;
+using System.Data.SqlClient;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace HospitalDAL
+{
+  public class Hos_Dal
+    {
+        SqlConnection conn;
+        SqlCommand cmd;
+        SqlDataAdapter da;
+
+        public int addDetailsDAL(Hos_Bo obj_bo)
+        {
+            try
+            {
+                string con = ConfigurationManager.ConnectionStrings["MyCon"].ConnectionString;
+                conn = new SqlConnection(con);
+                conn.Open();
+                cmd = new SqlCommand("pro_addDetails_1197810", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add(new SqlParameter("@patient_name", obj_bo.Patient_name));
+                cmd.Parameters.Add(new SqlParameter("@age", obj_bo.Age));
+                cmd.Parameters.Add(new SqlParameter("@gender", obj_bo.Gender));
+                cmd.Parameters.Add(new SqlParameter("@patient_address", obj_bo.Address));
+                cmd.Parameters.Add(new SqlParameter("@patient_type", obj_bo.Patient_type));
+                cmd.Parameters.Add(new SqlParameter("@speciality_id", obj_bo.SpecialityID));
+                int i = cmd.ExecuteNonQuery();
+
+                conn.Close();
+                return i;
+            }
+            catch (Exception)
+            {
+
+                return 0;
+            }
+        }
+
+        public DataSet fillDal(Hos_Bo obj_bo)
+        {
+            try
+            {
+                string con = ConfigurationManager.ConnectionStrings["MyCon"].ConnectionString;
+                conn = new SqlConnection(con);
+                cmd = new SqlCommand("pro_fillPatientDetails_1197810", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add(new SqlParameter("@patient_type", obj_bo.Patient_type));
+                da = new SqlDataAdapter();
+                da.SelectCommand = cmd;
+                DataSet ds = new DataSet();
+                da.Fill(ds);
+                return ds;
+
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        public int deleteDal(int id)
+        {
+            try
+            {
+                string con = ConfigurationManager.ConnectionStrings["MyCon"].ConnectionString;
+                conn = new SqlConnection(con);
+                conn.Open();
+                cmd = new SqlCommand("pro_deletePatientDetails_1197810", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add(new SqlParameter("@patient_id",id));
+                int i = cmd.ExecuteNonQuery();
+
+                conn.Close();
+                return i;
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
+        }
+    }
+}
+---------------------------------------
+BLL:-
+------------------------
+using HospitalBO;
+using HospitalDAL;
+using Hospital_Types;
+using System.Data;
+
+namespace HospitalBLL
+{
+    public class Hos_bll
+    {
+        public int addDetailsBLL(Hos_Bo obj_bo)
+        {
+            HospitalDAL.Hos_Dal obj_dal = new Hos_Dal();
+            int i=obj_dal.addDetailsDAL(obj_bo);
+            return i;
+        }
+
+        public DataSet fillbll(Hos_Bo obj_Bo)
+        {
+            HospitalDAL.Hos_Dal obj_dal = new Hos_Dal();
+            DataSet ds = new DataSet();
+            ds=obj_dal.fillDal(obj_Bo);
+            return ds;
+        }
+
+        public int deletebll(int id)
+        {
+            HospitalDAL.Hos_Dal obj_dal = new Hos_Dal();
+            int i = obj_dal.deleteDal(id);
+            return i;
+        }
+    }
+}
+alternative
+-------------
+public class Hospitalbll
+    {
+        Hospitaldal objdal = new Hospitaldal();
+        public int AddPatient(Hospitalbo objbo)
+        {
+           
+            return objdal.AddPatient(objbo);
+        }
+        public DataSet ViewPatient(Hospitalbo objbo)
+        {
+            return objdal.ViewPatient(objbo);
+
+        }
+        public int DeletePatient(Hospitalbo objbo)
+        {
+            return objdal.DeletePatient(objbo);
+        }
+    }
+
+ADD
+---------
+
+
+        protected void btn_add_Click(object sender, EventArgs e)
+        {
+            Hos_Bo obj_bo = new Hos_Bo();
+            obj_bo.Patient_name = txt_patient_name.Text;
+            obj_bo.Age = Convert.ToInt32(txt_age.Text);
+            obj_bo.Address = txt_address.Text;
+            obj_bo.Gender = rbl_gender.SelectedValue;
+            obj_bo.Patient_type =dd_patient_type.SelectedValue;
+            obj_bo.SpecialityID =Convert.ToInt32(dd_specialityID.SelectedValue);
+
+            HospitalBLL.Hos_bll obj_bll = new Hos_bll();
+            int i = obj_bll.addDetailsBLL(obj_bo);
+            if (i > 0)
+            {
+                Response.Write("Sucessfully added");
+                txt_patient_name.Text = "";
+                txt_age.Text = "";
+                txt_address.Text = "";
+            }
+            else
+                Response.Write("Invalid Input");
+	}
+
+View
+--------
+
+protected void Page_Load(object sender, EventArgs e)
+        {
+            lbl_pat_type.Text = Session["PatientType"].ToString();
+            Hos_Bo obj_Bo = new Hos_Bo();
+            obj_Bo.Patient_type = Session["P_Type"].ToString();
+            Hos_bll obj_bll = new Hos_bll();
+            DataSet ds = new DataSet();
+            ds=obj_bll.fillbll(obj_Bo);
+            gv_patient.DataSource = ds;
+            gv_patient.DataBind();
+            lbl_total.Text = gv_patient.Rows.Count.ToString();
+        }
+
+        protected void gv_patient_RowDeleting(object sender, GridViewDeleteEventArgs e)
+        {
+            int id = int.Parse(gv_patient.DataKeys[e.RowIndex].Value.ToString());
+            Hos_bll obj_bll = new Hos_bll();
+            int i=obj_bll.deletebll(id);
+            if(i>0)
+            {
+                Response.Write("sucessfully deleted");
+            }
+            else Response.Write("Not deleted");
+
+            Hos_Bo obj_Bo = new Hos_Bo();
+            obj_Bo.Patient_type = Session["P_Type"].ToString();
+            DataSet ds = new DataSet();
+            ds = obj_bll.fillbll(obj_Bo);
+            gv_patient.DataSource = ds;
+            gv_patient.DataBind();
+        }
+
+        protected void gv_patient_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+ui
+-------
+<asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="server">
+    <p>
+    <br />
+    <asp:Label ID="lbl_pat_type" runat="server"></asp:Label>
+</p>
+<p>
+    Total no of rows:
+    <asp:Label ID="lbl_total" runat="server"></asp:Label>
+    </p>
+<p>
+    <asp:GridView ID="gv_patient" runat="server" AutoGenerateColumns="False" DataKeyNames="patient_id" OnRowDeleting="gv_patient_RowDeleting" OnSelectedIndexChanged="gv_patient_SelectedIndexChanged">
+        <Columns>
+            <asp:TemplateField HeaderText="Patient ID">
+                <EditItemTemplate>
+                    <asp:Label ID="Label2" runat="server" Text='<%# Eval("patient_id") %>'></asp:Label>
+                </EditItemTemplate>
+                <ItemTemplate>
+                    <asp:Label ID="Label1" runat="server" Text='<%# Eval("patient_id") %>'></asp:Label>
+                </ItemTemplate>
+            </asp:TemplateField>
+            <asp:TemplateField HeaderText="Patient Name">
+                <EditItemTemplate>
+                    <asp:Label ID="Label4" runat="server" Text='<%# Eval("patient_name") %>'></asp:Label>
+                </EditItemTemplate>
+                <ItemTemplate>
+                    <asp:Label ID="Label3" runat="server" Text='<%# Eval("patient_name") %>'></asp:Label>
+                </ItemTemplate>
+            </asp:TemplateField>
+            <asp:TemplateField HeaderText="Age">
+                <EditItemTemplate>
+                    <asp:Label ID="Label6" runat="server" Text='<%# Eval("age") %>'></asp:Label>
+                </EditItemTemplate>
+                <ItemTemplate>
+                    <asp:Label ID="Label5" runat="server" Text='<%# Eval("age") %>'></asp:Label>
+                </ItemTemplate>
+            </asp:TemplateField>
+            <asp:TemplateField HeaderText="Speciality Name">
+                <EditItemTemplate>
+                    <asp:Label ID="Label8" runat="server" Text='<%# Eval("speciality_name") %>'></asp:Label>
+                </EditItemTemplate>
+                <ItemTemplate>
+                    <asp:Label ID="Label7" runat="server" Text='<%# Eval("speciality_name") %>'></asp:Label>
+                </ItemTemplate>
+            </asp:TemplateField>
+            <asp:TemplateField HeaderText="Gender">
+                <EditItemTemplate>
+                    <asp:Label ID="Label10" runat="server" Text='<%# Eval("gender") %>'></asp:Label>
+                </EditItemTemplate>
+                <ItemTemplate>
+                    <asp:Label ID="Label9" runat="server" Text='<%# Eval("gender") %>'></asp:Label>
+                </ItemTemplate>
+            </asp:TemplateField>
+            <asp:CommandField ShowDeleteButton="True" />
+        </Columns>
+    </asp:GridView>
+</p>
+</asp:Content>
+
+
+select
+---------
+
+protected void btn_submit_Click(object sender, EventArgs e)
+        {
+            Session["PatientType"] = dd_pat_type.SelectedItem;
+            Session["P_Type"] = dd_pat_type.SelectedValue;
+            Response.Redirect("GridViewPage.aspx");
+
+        }
+ui
+-----
+<asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
+    <style type="text/css">
+    .auto-style3 {
+        width: 375px;
+    }
+</style>
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="server">
+    <table class="auto-style1">
+    <tr>
+        <td class="auto-style3">
+            <asp:DropDownList ID="dd_pat_type" runat="server">
+                <asp:ListItem Value="in">InPatient</asp:ListItem>
+                <asp:ListItem Value="out">OutPatient</asp:ListItem>
+            </asp:DropDownList>
+        </td>
+        <td class="auto-style2">
+            <asp:Button ID="btn_submit" runat="server" OnClick="btn_submit_Click" Text="Submit" />
+        </td>
+    </tr>
+    <tr>
+        <td class="auto-style3">&nbsp;</td>
+        <td class="auto-style2">&nbsp;</td>
+    </tr>
+</table>
+</asp:Content>
+
+
+login
+-------
+	  protected void btn_login_Click(object sender, EventArgs e)
+        {
+            if(FormsAuthentication.Authenticate(txt_username.Text, txt_password.Text))
+            {
+                Session["UserName"] = txt_username.Text;
+                FormsAuthentication.RedirectFromLoginPage(txt_username.Text, false);
+            }
+            else
+            {
+                Response.Write("<script> alert('Wrong Credential, please enter valid credential.'); </script>");
+            }
+        }
+
+home
+--------
+ protected void Page_Load(object sender, EventArgs e)
+        {
+            lbl_wlcm.Text = Session["UserName"].ToString();
+        }
+
+
+webconfig
+-----------
+appSettings>
+    <add key="ValidationSettings:UnobtrusiveValidationMode" value="None" />
+  </appSettings>
+  <connectionStrings>
+    <add name="MyCon" connectionString="data source=inchnilpdb02\mssqlserver1; initial catalog=CHN16_MMS98_TEST; user id=mms98user; password=mms98user;"  providerName="System.Data.SqlClient"/>
+  </connectionStrings>
+  <system.web>
+    <authentication mode="Forms">
+      <forms defaultUrl="Home.aspx" loginUrl="Login.aspx">
+        <credentials passwordFormat="Clear">
+          <user name="admin"  password="admin"/>
+        </credentials>
+      </forms>
+    </authentication>
+
+    <authorization>
+      <allow users="*"/>
+      <deny users="?"/>
+    </authorization>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
