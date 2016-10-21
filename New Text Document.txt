@@ -1,3 +1,39 @@
+Orderbo objbo = new Orderbo();
+            Orderbll objbll = new Orderbll();
+            int i = int.Parse(GridView1.DataKeys[e.RowIndex].Value.ToString());
+            //GridView row = GridView1.Rows[e.RowIndex];
+            TextBox t1 = (TextBox)GridView1.Rows[e.RowIndex].FindControl("TextBox1");
+            objbo.ProductID = i;
+            objbo.Price = int.Parse(t1.Text);
+            TextBox t2 = (TextBox)GridView1.Rows[e.RowIndex].FindControl("TextBox2");
+            objbo.ProductName = t2.Text;
+	    objbll.Update
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 --------------tables------------------
 create table tbl_Patient_1197810(patient_id int primary key identity(1,1), patient_name varchar(15), age int, gender varchar(10), patient_address varchar(50), patient_type varchar(5) check(patient_type in('in','out')), speciality_id int references tbl_speciality_1197810(speciality_id))
 
