@@ -1,0 +1,314 @@
+appSettings>
+    <add key="ValidationSettings:UnobtrusiveValidationMode" value="None" />
+  </appSettings>
+  <connectionStrings>
+    <add name="MyCon" connectionString="data source=inchnilpdb02\mssqlserver1; initial catalog=CHN16_MMS98_TEST; user 
+
+id=mms98user; password=mms98user;"  providerName="System.Data.SqlClient"/>
+  </connectionStrings>
+  <system.web>
+    <authentication mode="Forms">
+      <forms defaultUrl="Home.aspx" loginUrl="Login.aspx">
+        <credentials passwordFormat="Clear">
+          <user name="admin"  password="admin"/>
+        </credentials>
+      </forms>
+    </authentication>
+
+    <authorization>
+      <allow users="*"/>
+      <deny users="?"/>
+    </authorization>
+
+ 
+protected void btn_login_Click(object sender, EventArgs e)
+        {
+            if (FormsAuthentication.Authenticate(txt_username.Text, txt_password.Text))
+            {
+                Session["UserName"] = txt_username.Text;
+                FormsAuthentication.RedirectFromLoginPage(txt_username.Text, false);
+            }
+            else
+            {
+                Response.Write("<script> alert('Wrong Credential, please enter valid credential.'); </script>");
+            }
+
+
+
+
+using OrderBO;
+using OrderDAL;
+using System.Data;
+using System.Data.SqlClient;
+{
+    public class Orderbll
+    {
+       public int AddProduct(Orderbo objbo)
+        {
+            Orderdal objdal = new Orderdal();
+            return objdal.AddProduct(objbo);
+        }
+        public DataSet ViewProduct(Orderbo objbo)
+        {
+            Orderdal objdal = new Orderdal();
+            return objdal.ViewProducts(objbo);
+        }
+        public int Updateproducts(Orderbo objbo)
+        {
+            Orderdal objdal = new Orderdal();
+            return objdal.UpdateProduct(objbo);
+        }
+        public int DeleteProduct(Orderbo objbo)
+        {
+            Orderdal objdal = new Orderdal();
+            return objdal.DeleteProduct(objbo);
+        }
+    }
+}
+
+using OrderBO;
+using System.Data;
+using System.Data.SqlClient;
+using System.Configuration;
+
+namespace OrderDAL
+{
+    public class Orderdal 
+    {
+        public int AddProduct(Orderbo objbo)
+        {
+            SqlConnection con = new SqlConnection(ConfigurationManager.ConnectionStrings["con"].ConnectionString);
+            SqlCommand com = new SqlCommand("sp_addprodb2", con);
+            con.Open();
+            com.CommandType = CommandType.StoredProcedure;
+            com.Parameters.AddWithValue("@Name", objbo.ProductName);
+            com.Parameters.AddWithValue("@Descp", objbo.Description);
+            com.Parameters.AddWithValue("@Price", objbo.Price);
+            com.Parameters.AddWithValue("@CategoryID", objbo.CategoryID);
+            com.Parameters.AddWithValue("@SupplierID", objbo.SupplierID);
+            int i = com.ExecuteNonQuery();
+            con.Close();
+            return i;
+        }
+        public DataSet ViewProducts(Orderbo objbo)
+        {
+            SqlConnection con = new SqlConnection(ConfigurationManager.ConnectionStrings["con"].ConnectionString);
+            SqlCommand com = new SqlCommand("sp_viewprob2", con);
+            con.Open();
+            com.CommandType = CommandType.StoredProcedure;
+            com.Parameters.Add(new SqlParameter("@CategoryID", objbo.CategoryID));
+            com.Parameters.Add(new SqlParameter("@SupplierID", objbo.SupplierID));
+
+            SqlDataAdapter da = new SqlDataAdapter();
+            DataSet ds = new DataSet();
+            da.SelectCommand = com;
+            da.Fill(ds);
+            con.Close();
+            return ds;
+        }
+        public int UpdateProduct(Orderbo objbo)
+        {
+            int result;
+            SqlConnection con = new SqlConnection(ConfigurationManager.ConnectionStrings["con"].ConnectionString);
+            SqlCommand cmd = new SqlCommand("sp_upprodb2", con);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@Price", objbo.Price);
+            cmd.Parameters.AddWithValue("@ProductID", objbo.ProductID);
+            cmd.Parameters.AddWithValue("@ProductName", objbo.ProductName);
+            con.Open();
+            result = cmd.ExecuteNonQuery();
+            con.Close();
+            return result;
+        }
+        public int DeleteProduct(Orderbo objbo)
+        {
+            SqlConnection con = new SqlConnection(ConfigurationManager.ConnectionStrings["con"].ConnectionString);
+            SqlCommand com = new SqlCommand("sp_delprob2", con);
+            con.Open();
+            com.CommandType = CommandType.StoredProcedure;
+            com.Parameters.AddWithValue("@ProductID", objbo.ProductID);
+            int i = com.ExecuteNonQuery();
+            con.Close();
+            return i;
+
+
+        }
+    }
+}
+
+
+add
+
+sing OrderBLL;
+using OrderBO;
+
+namespace OrderManagement
+{
+    public partial class AddProduct : System.Web.UI.Page
+    {
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            Label1.Text =Convert.ToString(Session["UserName"]);
+
+        }
+
+        protected void btn_Add_Click(object sender, EventArgs e)
+        {
+            Orderbo objbo = new Orderbo();
+            Orderbll objbll = new Orderbll();
+            objbo.ProductName = txt_name.Text;
+            objbo.Description = txt_desc.Text;
+            objbo.Price =Convert.ToInt32( txt_price.Text);
+            objbo.CategoryID = DropDownList1.SelectedIndex;
+            objbo.SupplierID = Label1.Text;
+            int i = objbll.AddProduct(objbo);
+            if(i>0)
+            {
+                Response.Write("Successfully Requested for the reservation");
+            }
+             
+
+        }
+    }
+}
+
+
+view
+
+
+using System.Data;
+
+namespace OrderManagement
+{
+    public partial class ViewProduct : System.Web.UI.Page
+    {
+        protected void Page_Load(object sender, EventArgs e)
+        {
+
+            if (!IsPostBack)
+            {
+                data_bind();
+            }
+        }
+
+
+        public void data_bind()
+        {
+            Orderbo objbo = new Orderbo();
+            Orderbll objbll = new Orderbll();
+            objbo.CategoryID = Convert.ToInt16(Session["CategoryID"]);
+            objbo.SupplierID = Session["UserName"].ToString();
+            DataSet ds = new DataSet();
+            ds = objbll.ViewProduct(objbo);
+            GridView1.DataSource = ds;
+            GridView1.DataBind();
+        }
+        protected void GridView1_RowEditing(object sender, GridViewEditEventArgs e)
+        {
+            GridView1.EditIndex = e.NewEditIndex;
+            data_bind();
+
+        }
+
+
+        protected void GridView1_RowUpdating(object sender, GridViewUpdateEventArgs e)
+        {
+            Orderbo objbo = new Orderbo();
+            Orderbll objbll = new Orderbll();
+            int i = int.Parse(GridView1.DataKeys[e.RowIndex].Value.ToString());
+            //GridView row = GridView1.Rows[e.RowIndex];
+            TextBox t1 = (TextBox)GridView1.Rows[e.RowIndex].FindControl("TextBox1");
+            objbo.ProductID = i;
+            objbo.Price = int.Parse(t1.Text);
+            TextBox t2 = (TextBox)GridView1.Rows[e.RowIndex].FindControl("TextBox2");
+            objbo.ProductName = t2.Text;
+
+            objbll.Updateproducts(objbo);
+            data_bind();
+        }
+
+        protected void GridView1_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
+        {
+            GridView1.EditIndex = -1;
+            data_bind();
+        }
+
+        protected void GridView1_RowDeleting(object sender, GridViewDeleteEventArgs e)
+        {
+            Orderbo objbo = new Orderbo();
+            Orderbll objbll = new Orderbll();
+            int i = int.Parse(GridView1.DataKeys[e.RowIndex].Value.ToString());
+            //GridView row = GridView1.Rows[e.RowIndex];
+           // TextBox t1 = (TextBox)GridView1.Rows[e.RowIndex].FindControl("TextBox1");
+            objbo.ProductID = i;
+            // objbo.Price = int.Parse(t1.Text);
+            // TextBox t2 = (TextBox)GridView1.Rows[e.RowIndex].FindControl("TextBox2");
+            // objbo.ProductName = t2.Text;
+            objbll.DeleteProduct(objbo);
+            data_bind();
+
+        }
+    }
+}
+
+namespace OrderManagement
+{
+    public partial class SelectCategory : System.Web.UI.Page
+    {
+        protected void Page_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        protected void select_Click(object sender, EventArgs e)
+        {
+            Session["CategoryID"] = ddl_cat.SelectedValue;
+            Response.Redirect("ViewProduct.aspx");
+        }
+    }
+}
+
+
+create table tbl_productt1093406(productID int primary key identity(1,1),productName varchar(20),price int,description Varchar(100),categoryID int references tbl_category_1093406(categoryID),supplierID varchar(20))
+create table tbl_category_1093406(categoryID int identity(1,1) primary key,categoryName varchar(50))
+insert into tbl_category_1093406 values('HouseHold')
+insert into tbl_category_1093406 values('Electronics')
+insert into tbl_category_1093406 values('Travel')
+drop table tbl_product_1093406
+
+select * from tbl_productt1093406
+insert into tbl_productt1093406 values('Radio',200,'Used for entertainment',2,'supplier1')
+
+ADD PROCEDURE
+create procedure sp_addprodb2(@Name varchar(20),@Descp varchar(100),@Price int,@CategoryID int,@SupplierID varchar(10))
+as
+begin
+insert into tbl_productt1093406 values(@Name,@Price,@Descp,@CategoryID,@SupplierID)
+end
+VIEW PROCEDURE
+create procedure sp_viewprob2(@CategoryID int,@SupplierID varchar(10))
+as
+begin
+select productID,productName,categoryName,price from tbl_category_1093406 as c inner join tbl_productt1093406 as p on c.categoryID=p.categoryID where (p.categoryID= @CategoryID and p.supplierID=@SupplierID) order by price
+end
+drop procedure sp_viewprob2
+UPDATE PROCEDURE
+create procedure sp_upprodb2(@Price int,@Productname varchar(20),@ProductID int)
+as
+begin
+update tbl_productt1093406 set price=@Price,productName=@Productname where productID=@ProductID
+end
+
+DELETE PROCEDURE
+
+create proc sp_delprob2(@ProductID int)
+as
+begin
+delete from tbl_productt1093406 where productID=@ProductID
+end
+
+
+
+
+
+
